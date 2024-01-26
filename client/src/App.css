@@ -28,6 +28,18 @@
   color: #61dafb;
 }
 
+.todo_order, .todo_value, .todo_submit {
+  margin-right: 1em;
+}
+
+.todo_submit {
+  background-color: red;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border-width: 1px;
+  border-color: blue;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

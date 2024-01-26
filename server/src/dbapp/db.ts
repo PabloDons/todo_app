@@ -3,7 +3,19 @@ import {validate as uuidValidate, v4 as uuidv4} from 'uuid'
 import fs from 'fs'
 import crypto from 'crypto'
 
-
+const joinUserProject_project = `
+    INNER JOIN user_project ON project.id = user_project.project_id
+    WHERE user_project.user_id = ?
+`
+const joinUserProject_todoList = `
+    INNER JOIN user_project ON project.id = todo_list.project
+    WHERE user_project.user_id = ?
+`
+const joinUserProject_todoItem = `
+    INNER JOIN user_project ON todo_list.project = user_project.project_id
+    INNER JOIN another_table ON user_project.some_field = another_table.some_field
+    WHERE user_project.user_id = ?
+`
 class DB {
     db: sqlite3.Database
     constructor() {
@@ -51,7 +63,7 @@ class DB {
     }
 
     public createSession(userId: string): Promise<string> {
-        const stmt = this.db.prepare("INSERT INTO session (token, user, expiry) VALUES (?, ?, ?)")
+        const stmt = this.db.prepare("INSERT INTO session (token, user, expiry) VALUES (?, ?, ?) ")
         const tokenpromise = new Promise<string>((res, rej)=>{
             crypto.randomBytes(32, (err, buffer) => {
                 if (err) {
@@ -69,12 +81,161 @@ class DB {
         return tokenpromise
     }
 
-    public listTodos(token: string) {
-        const todosPromise = new Promise<Todo[]>((res, rej) => {
+    public createProject(token: string, name: string): Promise<string> {
+        const resultPromise = new Promise<string>((res, rej)=>{
+            this.checkSession(token).then((session) => {
+                const userId = session.user
+                const project_id = uuidv4();
+                const stmt = this.db.prepare("INSERT INTO project (id, name) VALUES (?, ?); INSERT INTO user_project (user_id, project_id) VALUES (?, ?)")
+                stmt.run(project_id, name, userId, project_id, (err) => {
+                    if (err) {
+                        rej(err);
+                        return;
+                    }
+                    res(project_id)
+                })
+            })
+        })
+        return resultPromise
+    }
+
+    public listProjects(token: string): Promise<any[]> {
+        const resultPromise = new Promise<any[]>((res, rej)=>{
+            this.checkSession(token).then((session) => {
+                const userId = session.user
+                const stmt = this.db.prepare("SELECT project.id, project.name FROM project "+joinUserProject_project)
+                stmt.all(userId, userId, (err, rows: any[]) => {
+                    if (err) {
+                        rej(err);
+                        return;
+                    }
+                    res(rows)
+                })
+            })
+        })
+        return resultPromise
+    }
+
+    public editProject(token: string, projectId: string, name: string): Promise<string> {
+        const resultPromise = new Promise<string>((res, rej)=>{
+            this.checkSession(token).then((session) => {
+                const userId = session.user
+                const stmt = this.db.prepare("UPDATE project SET name = ? WHERE (user = ?) AND (id = ?)")
+                stmt.run(name, userId, projectId, (err) => {
+                    if (err) {
+                        rej(err);
+                        return;
+                    }
+                    res(projectId)
+                })
+            })
+        })
+        return resultPromise
+    }
+
+    public deleteProject(token: string, projectId: string): Promise<void> {
+        const resultPromise = new Promise<void>((res, rej)=>{
+            this.checkSession(token).then((session) => {
+                const userId = session.user
+                const stmt = this.db.prepare("DELETE FROM project WHERE (id = ?) "+joinUserProject_project)
+                stmt.run(projectId, userId, (err) => {
+                    if (err) {
+                        rej(err);
+                        return;
+                    }
+                    res()
+                })
+            })
+        })
+        return resultPromise
+    }
+
+    public createTodoList(token: string, projectId: string, name: string): Promise<string> {
+        const resultPromise = new Promise<string>((res, rej)=>{
+            this.checkSession(token).then((session) => {
+                const userId = session.user
+                const todo_list_id = uuidv4();
+                const checkStmt = this.db.prepare("SELECT 1 FROM project WHERE (project.id = ?) "+joinUserProject_project)
+                checkStmt.get(projectId, userId, (err, row) => {
+                    if (err) {
+                        rej(err);
+                        return;
+                    }
+                    if (!row) {
+                        rej(new Error("User does not have access to this project."));
+                        return;
+                    }
+                    const stmt = this.db.prepare("INSERT INTO todo_list (id, project, name) VALUES (?, ?, ?)")
+                    stmt.run(todo_list_id, projectId, name, (err) => {
+                        if (err) {
+                            rej(err);
+                            return;
+                        }
+                        res(todo_list_id)
+                    })
+                })
+            })
+        })
+        return resultPromise
+    }
+
+    public listTodoLists(token: string, projectId: string): Promise<any[]> {
+        const resultPromise = new Promise<any[]>((res, rej)=>{
+            this.checkSession(token).then((session) => {
+                const userId = session.user
+                const stmt = this.db.prepare("SELECT todo_list.id, todo_list.name FROM todo_list WHERE project = ? "+joinUserProject_todoList)
+                stmt.all(projectId, userId, (err, rows: any[]) => {
+                    if (err) {
+                        rej(err);
+                        return;
+                    }
+                    res(rows)
+                })
+            })
+        })
+        return resultPromise
+    }
+
+    public editTodoList(token: string, todoListId: string, name: string): Promise<string> {
+        const resultPromise = new Promise<string>((res, rej)=>{
+            this.checkSession(token).then((session) => {
+                const userId = session.user
+                const stmt = this.db.prepare("UPDATE todo_list SET name = ? WHERE (todo_list.id = ?) "+joinUserProject_todoList)
+                stmt.run(name, todoListId, userId, (err) => {
+                    if (err) {
+                        rej(err);
+                        return;
+                    }
+                    res(todoListId)
+                })
+            })
+        })
+        return resultPromise
+    }
+
+    public deleteTodoList(token: string, todoListId: string): Promise<void> {
+        const resultPromise = new Promise<void>((res, rej)=>{
+            this.checkSession(token).then((session) => {
+                const userId = session.user
+                const stmt = this.db.prepare("DELETE FROM todo_list WHERE (todo_list.id = ?) "+joinUserProject_todoList)
+                stmt.run(todoListId, userId, (err) => {
+                    if (err) {
+                        rej(err);
+                        return;
+                    }
+                    res()
+                })
+            })
+        })
+        return resultPromise
+    }
+
+    public listTodos(token: string, todoListId: string): Promise<TodoItem[]> {
+        const todosPromise = new Promise<TodoItem[]>((res, rej) => {
             this.checkSession(token).then((session) => {
                 const userId = session.user;
-                const stmt = this.db.prepare("SELECT list_order, value FROM `todo_item` WHERE user = ?")
-                stmt.all(userId, (err, rows: Todo[]) => {
+                const stmt = this.db.prepare("SELECT todo_item.list_order, todo_item.value FROM `todo_item` WHERE todo_item.todo_list = ? "+joinUserProject_todoItem+" ORDER BY list_order ASC")
+                stmt.all(todoListId, userId, (err, rows: TodoItem[]) => {
                     res(rows)
                 })
             })
@@ -82,29 +243,41 @@ class DB {
         return todosPromise
     }
 
-    public addTodo(token: string, order: number, value: number): Promise<void> {
+    public addTodo(token: string, todoListId: string, order: number, value: number): Promise<void> {
         const resultPromise = new Promise<void>((res, rej)=>{
             this.checkSession(token).then((session) => {
                 const userId = session.user
-                const stmt = this.db.prepare("INSERT INTO `todo_item` (user, list_order, value) VALUES (?, ?, ?)")
-                stmt.run(userId, order, value, (err) => {
+                // TODO: check if user has access to todoListId
+                const checkStmt = this.db.prepare("SELECT 1 FROM todo_list WHERE (todo_list.project = ?) "+joinUserProject_todoList)
+                checkStmt.get(todoListId, userId, (err, row) => {
                     if (err) {
                         rej(err);
                         return;
                     }
-                    res()
-                }).finalize()
+                    if (!row) {
+                        rej(new Error("User does not have access to this todo list."));
+                        return;
+                    }
+                    const stmt = this.db.prepare("INSERT INTO `todo_item` (todo_list, list_order, value) VALUES (?, ?, ?)")
+                    stmt.run(todoListId, order, value, (err) => {
+                        if (err) {
+                            rej(err);
+                            return;
+                        }
+                        res()
+                    })
+                })
             })
         })
         return resultPromise
     }
 
-    public editTodo(token: string, order: number, value: Todo): Promise<any> {
+    public editTodo(token: string, todoListId: string, order: number, value: string): Promise<any> {
         const resultPromise = new Promise<any>((res, rej)=>{
             this.checkSession(token).then((session) => {
                 const userId = session.user
-                const stmt = this.db.prepare("UPDATE todo_item SET list_order = ?, value = ? WHERE (user = ?) AND (list_order = ?)")
-                stmt.run(value.order, value.value, userId, order, function(this: any, err) {
+                const stmt = this.db.prepare("UPDATE todo_item SET list_order = ?, value = ? WHERE (list_order = ?) "+joinUserProject_todoItem)
+                stmt.run(order, value, order, userId, function(this: any, err) {
                     if (err || this.changes === 0) {
                         rej(err);
                         throw err;
@@ -116,7 +289,7 @@ class DB {
         return resultPromise
     }
 
-    public deleteTodo(token: string, order: number): Promise<void> {
+    public deleteTodo(token: string, todoListId: string, order: number): Promise<void> {
         const resultPromise = new Promise<void>((res, rej)=>{
             this.checkSession(token).then((session) => {
                 const userId = session.user
@@ -167,9 +340,24 @@ interface Session {
     user: string
 }
 
-interface Todo {
-    order: number,
+interface TodoItem {
+    list_order: number,
     value: string
+}
+
+interface TodoList {
+    id: string,
+    name: string
+}
+
+interface Project {
+    id: string,
+    name: string
+}
+
+interface UserProject {
+    user: string,
+    project: string
 }
 
 export default DB

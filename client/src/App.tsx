@@ -9,6 +9,7 @@ function App() {
   const [api, setApi] = useState<API>();
 
   useEffect(() => {
+    document.title = "Todo List"
     API.createAPI().then(api => {
       setApi(api)
     })

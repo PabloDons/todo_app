@@ -64,6 +64,12 @@ router.delete("/project/:projectId", (req, res) => {
     })
 })
 
+router.post("/project", (req, res) => {
+    db.listProjects(req.body.token).then((projects)=>{
+        res.send({status: "ok", content: {projects}})
+    })
+})
+
 router.post("/list/create", (req, res) => {
     db.createTodoList(req.body.token, req.body.list.project, req.body.list.name).then((list)=>{
         res.send({status: "ok", content: {list}})

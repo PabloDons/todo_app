@@ -1,3 +1,5 @@
+import { Project } from "./interfaces";
+
 class API {
     public token: string;
 
@@ -5,7 +7,7 @@ class API {
         this.token = '';
     }
 
-    public static async createAPI(token: string, projectName: string) {
+    public static async createAPI() {
         const API = new this();
         API.token = await API.getSession();
         return API;
@@ -61,7 +63,7 @@ class API {
             token,
             order: list_order_int,
         }
-        let res = await fetch("http://localhost:8052/db/todo/add", { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token }) })
+        let res = await fetch("http://localhost:8052/db/todo/add", { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         let jsonRes = await res.json()
         return jsonRes.content.todos;
     }
@@ -76,6 +78,15 @@ class API {
         }).then(response => response.json());
     }
 
+    public async listProjects(): Promise<Project[]> {
+        let token = this.token;
+        if (token === null) {
+            token = await this.getSession()
+        }
+        let res = await fetch("http://localhost:8052/db/project", { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token }) })
+        let jsonRes = await res.json()
+        return jsonRes.content.projects;
+    }
 
     // Function to edit a project
     public async editProject(token: string, projectId: string, projectName: string) {

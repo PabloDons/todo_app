@@ -2,53 +2,19 @@ import React, { useEffect, useState } from 'react';
 import {v4 as uuidv4} from 'uuid'
 import './App.css';
 import API from './api';
+import { Main } from './components/Main';
+
 
 function App() {
-  const [todos, setTodos] = useState<any[]>([]);
-  const [inputOrderVal, setInputOrderVal] = useState('');
-  const [inputTodoVal, setInputTodoVal] = useState('');
+  const [api, setApi] = useState<API>();
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    // Call your function here
-    addTodo(
-      inputOrderVal,
-      inputTodoVal
-    );
-
-    setInputOrderVal('');
-    setInputTodoVal('');
-  }
-  
-  useEffect(()=>{    
-    listTodos().then((val: any[]) => {
-      setTodos(val)
+  useEffect(() => {
+    API.createAPI().then(api => {
+      setApi(api)
     })
   }, [])
 
-  return (
-    <div className="App">
-      <p>Todos:</p>
-      {todos.map(todo =>
-        <p key={uuidv4()}>
-          <span>{(todo.list_order).toString()}: {todo.value}</span>
-        </p>
-      )}
-      <form onSubmit={handleSubmit}>
-        <input className="todo_order"
-          type="number" 
-          value={inputOrderVal} 
-          onChange={e => setInputOrderVal(e.target.value)} 
-        />
-        <input className="todo_value"
-          type="text" 
-          value={inputTodoVal} 
-          onChange={e => setInputOrderVal(e.target.value)} 
-        />
-        <button type="submit" className="todo_submit">Submit</button>
-      </form>
-    </div>
-  );
+  return api ? (<Main api={api}></Main>) : (<div>loading</div>)
 }
 
 export default App;

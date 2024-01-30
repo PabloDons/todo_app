@@ -35,7 +35,7 @@ export const TodoMain = function (props: {api: API}) {
     function editTodo(list_order: number) {
         const value = editTodoVal.current?.value || "";
         const new_order = parseInt(editTodoOrder.current?.value || "0");
-        const newTodo: Todo = {list_order, value, checked: false}
+        const newTodo: Todo = {list_order: new_order, value, checked: false}
         props.api.editTodo(list_order, newTodo)
         
         const newTodos = todos.map(todo => {

@@ -54,6 +54,8 @@ router.post("/list/add", (req, res) => {
 
 router.post("/list/:order/edit", (req, res) => {
     const order = parseInt(req.params.order)
+    console.log(req.body)
+    console.log(req.params)
     db.editTodo(req.body.token, order, req.body.todo).then((item)=>{
         res.send({status:"ok", content: {description: "success", item}})
     })

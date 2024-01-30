@@ -40,76 +40,28 @@ router.post("/user/:userId", (req, res) => {
     })
 })
 
-router.post("/project/create", (req, res) => {
-    db.createProject(req.body.token, req.body.project.name).then((project)=>{
-        res.send({status: "ok", content: {project}})
-    })
-})
-
-router.post("/project/:projectId/edit", (req, res) => {
-    db.editProject(req.body.token, req.params.projectId, req.body.project.name).then((project)=>{
-        res.send({status: "ok", content: {project}})
-    })
-})
-
-router.post("/project/:projectId", (req, res) => {
-    db.listTodoLists(req.body.token, req.params.projectId).then((project)=>{
-        res.send({status: "ok", content: {project}})
-    })
-})
-
-router.delete("/project/:projectId", (req, res) => {
-    db.deleteProject(req.body.token, req.params.projectId).then(()=> {
-        res.send({status: "ok", content: "success"})
-    })
-})
-
-router.post("/project", (req, res) => {
-    db.listProjects(req.body.token).then((projects)=>{
-        res.send({status: "ok", content: {projects}})
-    })
-})
-
-router.post("/list/create", (req, res) => {
-    db.createTodoList(req.body.token, req.body.list.project, req.body.list.name).then((list)=>{
+router.post("/list", (req, res) => {
+    db.listTodos(req.body.token).then((list)=>{
         res.send({status: "ok", content: {list}})
     })
 })
 
-router.post("/list/:listId/edit", (req, res) => {
-    db.editTodoList(req.body.token, req.params.listId, req.body.list.name).then((list)=>{
+router.post("/list/add", (req, res) => {
+    db.addTodo(req.body.token, req.body.todo.list_order, req.body.todo.value).then((list)=>{
         res.send({status: "ok", content: {list}})
     })
 })
 
-router.post("/list/:listId", (req, res) => {
-    db.listTodos(req.body.token, req.params.listId).then((list)=>{
-        res.send({status: "ok", content: {list}})
-    })
-})
-
-router.delete("/list/:listId", (req, res) => {
-    db.deleteTodoList(req.body.token, req.params.listId).then(()=> {
-        res.send({status: "ok", content: "success"})
-    })
-})
-
-router.post("/list/:listId/add", (req, res) => {
-    db.addTodo(req.body.token, req.params.listId, req.body.todo.order, req.body.todo.value).then((list)=>{
-        res.send({status: "ok", content: {list}})
-    })
-})
-
-router.post("/list/:listId/:order/edit", (req, res) => {
+router.post("/list/:order/edit", (req, res) => {
     const order = parseInt(req.params.order)
-    db.editTodo(req.body.token, req.params.listId, order, req.body.todo.new).then((item)=>{
+    db.editTodo(req.body.token, order, req.body.todo).then((item)=>{
         res.send({status:"ok", content: {description: "success", item}})
     })
 })
 
-router.delete("/list/:listId/:order", (req, res) => {
+router.delete("/list/:order", (req, res) => {
     const order = parseInt(req.params.order)
-    db.deleteTodo(req.body.token, req.params.listId, order).then(()=>{
+    db.deleteTodo(req.body.token, order).then(()=>{
         res.send({status:"ok", content: "success"})
     })
 })

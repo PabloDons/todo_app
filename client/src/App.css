@@ -1,33 +1,3 @@
-.App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
 .todo_order, .todo_value, .todo_submit {
   margin-right: 1em;
 }
@@ -40,11 +10,54 @@
   border-color: blue;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.todo_item_checked {
+  width:20px;
+  height:20px;
+  margin-right: 6px;
+}
+
+.todo_item_done {
+  background-color: green;
+}
+
+.todo_item_order {
+  margin-right: 6px;
+  font-weight: bold;
+}
+
+.todo_item_order::after {
+  content: ".";
+}
+
+.todo_item_value {
+  flex-grow: 1;
+}
+
+.todo_item, .add_todo {
+  display: flex;
+  width: 500px;
+  margin-bottom: 8px;
+  background-color: lightgray;
+  border-radius: 6px;
+  padding: 4px;
+}
+
+.todo_item_finished {
+  text-decoration: line-through;
+  color: darkgrey;
+}
+
+.add_item_order {
+  width: 100px;
+}
+
+.add_item_value {
+  flex-grow: 1;
+}
+
+body {
+  margin-left: 16px;
+}
+.app h1 {
+  margin-left: 16px;
 }

@@ -1,5 +1,5 @@
 export interface Todo {
-    id: string;
+    checked: any;
     value: string;
     list_order: number;
 }

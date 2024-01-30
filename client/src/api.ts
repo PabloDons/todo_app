@@ -1,4 +1,6 @@
-import { Project } from "./interfaces";
+import { Todo } from "./interfaces";
+
+const HOST_ADDRESS = process.env.APP_HOST_ADDRESS || "http://localhost:8052"
 
 class API {
     public token: string;
@@ -14,7 +16,7 @@ class API {
     }
 
     public async createUser() {
-        let res = await fetch("http://localhost:8052/db/user/create", { method: "POST" })
+        let res = await fetch(HOST_ADDRESS+"/db/user/create", { method: "POST" })
         let jsonRes = await res.json()
         localStorage.setItem("userId", jsonRes.content.userId)
         localStorage.setItem("key", jsonRes.content.key)
@@ -36,72 +38,74 @@ class API {
             userId = userObj.userId
             key = userObj.key
         }
-        let res = await fetch("http://localhost:8052/db/user/" + userId, { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) })
+        let res = await fetch(HOST_ADDRESS+"/db/user/" + userId, { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key }) })
         let jsonRes = await res.json()
         localStorage.setItem("token", jsonRes.content.token)
         return jsonRes.content.token
     }
 
     public async listTodos() {
-        let token = localStorage.getItem("token")
+        let token = this.token
         if (token === null) {
             token = await this.getSession()
         }
-        let res = await fetch("http://localhost:8052/db/todo", { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token }) })
+        let res = await fetch(HOST_ADDRESS+"/db/list", { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token }) })
         let jsonRes = await res.json()
-        return jsonRes.content.todos;
+        return jsonRes.content.list;
     }
 
-    public async addTodo(list_order: string, value: string) {
-        const list_order_int = parseInt(list_order)
-        let token = localStorage.getItem("token")
+    public async addTodo(list_order: number, value: string): Promise<Todo[]> {
+        let token = this.token
         if (token === null) {
             token = await this.getSession()
         }
 
         const body = {
             token,
-            order: list_order_int,
-        }
-        let res = await fetch("http://localhost:8052/db/todo/add", { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
-        let jsonRes = await res.json()
-        return jsonRes.content.todos;
-    }
-    // Function to create a project
-    public async createProject(token: string, projectName: string) {
-        return await fetch('/project/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+            todo: {
+                list_order: list_order,
+                value: value,
             },
-            body: JSON.stringify({ token, project: { name: projectName } }),
-        }).then(response => response.json());
+        }
+        let res = await fetch(HOST_ADDRESS+"/db/list/add", { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        let jsonRes = await res.json()
+        return jsonRes.content.list;
     }
 
-    public async listProjects(): Promise<Project[]> {
-        let token = this.token;
+    public async deleteTodo(list_order: number) {
+        let token = this.token
         if (token === null) {
             token = await this.getSession()
         }
-        let res = await fetch("http://localhost:8052/db/project", { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: token }) })
+        const body = {
+            token,
+        }
+        let res = await fetch(HOST_ADDRESS+"/db/list/"+list_order, { method: "DELETE", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
         let jsonRes = await res.json()
-        return jsonRes.content.projects;
+        return jsonRes.content.todos;
     }
 
-    // Function to edit a project
-    public async editProject(token: string, projectId: string, projectName: string) {
-        return await fetch(`/project/${projectId}/edit`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+    public async editTodo(list_order: number, new_value: Todo) {
+        let token = this.token
+        if (token === null) {
+            token = await this.getSession()
+        }
+        const body = {
+            token,
+            todo: {
+                value: new_value.value,
+                list_order: new_value.list_order,
+                checked: new_value.checked,
             },
-            body: JSON.stringify({ token, project: { name: projectName } }),
-        }).then(response => response.json());
+        }
+        let res = await fetch(HOST_ADDRESS+`/db/list/${list_order}/edit`, { method: "POST", headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+        let jsonRes = await res.json()
+        return jsonRes.content.todos;
     }
+        
 }
 
 export default API;
-
 
 
 
